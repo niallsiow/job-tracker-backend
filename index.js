@@ -15,40 +15,58 @@ const jobs = [
     }
 ]
 
+const createJob = (req, res) => {
+    let body = '';
+    
+    req.on('data', (chunk) => {
+        body += chunk.toString();
+    });
+
+    req.on('end', () => {
+        console.log(body);
+        const job = JSON.parse(body);
+        const title = job.title;
+        console.log(title);
+        const newJob = {
+            "title": title,
+            "company": "Placeholder Company",
+            "source": "Placeholder Source",
+            "stage": "Placeholder Stage"
+        };
+
+        jobs.push(newJob);
+
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.statusCode = 201;
+        res.write(JSON.stringify(newJob));
+        res.end();
+    });
+};
+
+const invalidPostURL = (req, res) => {
+    res.statusCode = 404;
+    res.write(JSON.stringify({ message: 'Route not found' }));
+    res.end();
+};
+
 const server = http.createServer((req, res) => {
     if (req.method === 'GET'){
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        console.log(res.getHeaders());
-        res.end(JSON.stringify(jobs));
+        if(req.url === '/jobs'){
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            console.log(res.getHeaders());
+            res.end(JSON.stringify(jobs));
+        }
     }
     else if (req.method === 'POST'){
         console.log('Received a post request');
-        let body = '';
-        
-        req.on('data', (chunk) => {
-            body += chunk.toString();
-        });
 
-        req.on('end', () => {
-            console.log(body);
-            let title = body.split("=")[1];
-            title = title.replace("+", " ");
-            console.log(title);
-            const newJob = {
-                "title": title,
-                "company": "Placeholder Company",
-                "source": "Placeholder Source",
-                "stage": "Placeholder Stage"
-            };
-
-            jobs.push(newJob);
-
-            res.statusCode = 201;
-            res.write(JSON.stringify(newJob));
-            res.end();
-        });
-
+        if (req.url === '/jobs/create'){
+            createJob(req, res);
+        }
+        else {
+            invalidPostURL(req, res);
+        }
     }
 });
 
